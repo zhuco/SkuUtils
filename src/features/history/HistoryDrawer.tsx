@@ -31,14 +31,14 @@ export function HistoryDrawer({
   onLoad,
   onDelete
 }: Props) {
-  function renderQuantitySummary(quantities: number[]) {
+  function renderQuantitySummary(quantities: number[], unitLabel: CalculationHistory["unitLabel"]) {
     const visible = quantities.slice(0, 4);
     const hiddenCount = Math.max(quantities.length - visible.length, 0);
 
     return (
       <Space size={[4, 4]} wrap>
         {visible.map((quantity) => (
-          <Tag key={quantity}>X{quantity}</Tag>
+          <Tag key={quantity}>{`X${quantity}${unitLabel}`}</Tag>
         ))}
         {hiddenCount > 0 ? <Tag>+{hiddenCount}</Tag> : null}
       </Space>
@@ -86,7 +86,7 @@ export function HistoryDrawer({
                   </Space>
                   <Space size={10} wrap>
                     <Tag color="green">{history.items.length} 个规格</Tag>
-                    {renderQuantitySummary(history.selectedQuantities)}
+                    {renderQuantitySummary(history.selectedQuantities, history.unitLabel)}
                   </Space>
                   <Space size={8}>
                     <Button type="primary" size="small" onClick={() => onLoad(history)}>

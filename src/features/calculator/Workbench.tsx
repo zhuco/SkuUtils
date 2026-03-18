@@ -8,6 +8,7 @@ import {
   Input,
   InputNumber,
   Row,
+  Select,
   Space,
   Table,
   Tag,
@@ -25,6 +26,7 @@ import type {
   CalculationSession,
   Product,
   SalesSpec,
+  UnitLabel,
   WorkbenchForm
 } from "../../types";
 import { workbenchSchema } from "../../types/schemas";
@@ -39,6 +41,8 @@ import { SettingsDrawer } from "../settings/SettingsDrawer";
 function buildSpecName(quantity: number) {
   return `X${quantity}`;
 }
+
+const unitLabelOptions: UnitLabel[] = ["件", "包", "袋", "箱", "克", "千克", "份"];
 
 function resultsToClipboardText(items: CalculationResult[]) {
   const header = [
@@ -225,6 +229,7 @@ export function Workbench() {
     const nextForm: WorkbenchForm = {
       id: product.id,
       name: product.name,
+      unitLabel: product.unitLabel,
       unitCost: product.unitCost,
       unitWeight: product.unitWeight,
       selectedSpecIds: product.selectedSpecIds
@@ -245,6 +250,7 @@ export function Workbench() {
       const nextForm: WorkbenchForm = {
         id: history.productId,
         name: history.productName,
+        unitLabel: history.unitLabel,
         unitCost: history.unitCost,
         unitWeight: history.unitWeight,
         selectedSpecIds: history.selectedQuantities
@@ -374,12 +380,19 @@ export function Workbench() {
                     }
                   >
                     <Row gutter={16}>
-                      <Col xs={24} md={10}>
+                      <Col xs={24} md={9}>
                         <Form.Item label="商品名称" name="name">
                           <Input data-testid="product-name" placeholder="请输入商品名称" />
                         </Form.Item>
                       </Col>
-                      <Col xs={24} md={7}>
+                      <Col xs={24} md={5}>
+                        <Form.Item label="规格单位" name="unitLabel">
+                          <Select
+                            options={unitLabelOptions.map((value) => ({ label: value, value }))}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} md={5}>
                         <Form.Item label="单件成本" name="unitCost">
                           <InputNumber
                             data-testid="unit-cost"
@@ -390,7 +403,7 @@ export function Workbench() {
                           />
                         </Form.Item>
                       </Col>
-                      <Col xs={24} md={7}>
+                      <Col xs={24} md={5}>
                         <Form.Item label="单件重量(g)" name="unitWeight">
                           <InputNumber
                             data-testid="unit-weight"

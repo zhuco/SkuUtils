@@ -9,6 +9,7 @@ import type {
   Product,
   SalesSpec,
   ShippingRule,
+  UnitLabel,
   WorkbenchForm
 } from "../types";
 
@@ -38,6 +39,10 @@ function normalizeProductName(value: string) {
   return value.trim().toLocaleLowerCase();
 }
 
+function normalizeUnitLabel(value: UnitLabel | null | undefined) {
+  return value ?? "件";
+}
+
 function byRecent<T extends { createdAt?: string; updatedAt?: string }>(items: T[]) {
   return [...items].sort((a, b) => {
     const left = a.updatedAt ?? a.createdAt ?? "";
@@ -62,6 +67,7 @@ function normalizeHistories(histories: CalculationHistory[]) {
   const defaults = createDefaultSettings();
   return histories.map((history) => ({
     ...history,
+    unitLabel: normalizeUnitLabel(history.unitLabel),
     settingsSnapshot: {
       platformFeePercent: history.settingsSnapshot.platformFeePercent,
       packageFeeMode: history.settingsSnapshot.packageFeeMode,
@@ -77,6 +83,13 @@ function normalizeHistories(histories: CalculationHistory[]) {
       ...item,
       marketingFee: item.marketingFee ?? 0
     }))
+  }));
+}
+
+function normalizeProducts(products: Product[]) {
+  return products.map((product) => ({
+    ...product,
+    unitLabel: normalizeUnitLabel(product.unitLabel)
   }));
 }
 
@@ -151,6 +164,12 @@ function getInitializedSnapshot() {
   const normalizedHistories = normalizeHistories(snapshot.histories);
   if (JSON.stringify(normalizedHistories) !== JSON.stringify(snapshot.histories)) {
     snapshot.histories = normalizedHistories;
+    changed = true;
+  }
+
+  const normalizedProducts = normalizeProducts(snapshot.products);
+  if (JSON.stringify(normalizedProducts) !== JSON.stringify(snapshot.products)) {
+    snapshot.products = normalizedProducts;
     changed = true;
   }
 
@@ -266,6 +285,7 @@ export async function saveProduct(input: WorkbenchForm) {
   const timestamp = now();
   const base = {
     name: input.name.trim(),
+    unitLabel: input.unitLabel,
     unitCost: input.unitCost ?? 0,
     unitWeight: input.unitWeight ?? 0,
     selectedSpecIds: input.selectedSpecIds
@@ -305,6 +325,7 @@ export async function saveHistory(product: Product | null, session: CalculationS
     id: existing?.id ?? createId(),
     productId: product?.id ?? null,
     productName: session.productName,
+    unitLabel: session.unitLabel,
     unitCost: session.unitCost,
     unitWeight: session.unitWeight,
     selectedSpecIds: session.selectedSpecIds,
@@ -396,7 +417,7 @@ export async function importLocalBackup(payload: LocalBackup) {
     salesSpecs: parsed.salesSpecs,
     shippingRules: parsed.shippingRules,
     settings: normalizeSettings(parsed.settings),
-    products: parsed.products,
+    products: normalizeProducts(parsed.products),
     histories: normalizeHistories(parsed.histories)
   });
 }

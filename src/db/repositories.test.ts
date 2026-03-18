@@ -17,6 +17,7 @@ describe("saveProductAndHistory", () => {
     const buildForm = (unitCost: number): WorkbenchForm => ({
       id: null,
       name: "测试商品A",
+      unitLabel: "件",
       unitCost,
       unitWeight: 200,
       selectedSpecIds: [specs[0].id]
@@ -54,6 +55,7 @@ describe("saveProductAndHistory", () => {
     const baseForm: WorkbenchForm = {
       id: null,
       name: "测试商品B",
+      unitLabel: "袋",
       unitCost: 8,
       unitWeight: 180,
       selectedSpecIds: [specs[1].id]
@@ -89,5 +91,6 @@ describe("saveProductAndHistory", () => {
     const backup = await exportLocalBackup();
     expect(backup.histories.filter((item) => item.productName.trim() === "测试商品B")).toHaveLength(1);
     expect(backup.products.filter((item) => item.name === "测试商品B")).toHaveLength(1);
+    expect(backup.products.find((item) => item.name === "测试商品B")?.unitLabel).toBe("袋");
   });
 });

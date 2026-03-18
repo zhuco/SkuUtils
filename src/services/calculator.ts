@@ -118,7 +118,7 @@ export function calculateSession(input: {
     const breakEvenRoi = profitRate.gt(0) ? new Decimal(1).div(profitRate) : new Decimal(0);
 
     return {
-      specName: spec.name,
+      specName: `${spec.name}${parsed.unitLabel}`,
       specQuantity: spec.quantity,
       goodsCost: money(goodsCost),
       totalWeight: money(totalWeight),
@@ -138,6 +138,7 @@ export function calculateSession(input: {
 
   return {
     productName: parsed.name,
+    unitLabel: parsed.unitLabel,
     unitCost: parsed.unitCost,
     unitWeight: parsed.unitWeight,
     selectedSpecIds: parsed.selectedSpecIds,

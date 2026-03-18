@@ -1,8 +1,11 @@
 import { z } from "zod";
 
+const unitLabelSchema = z.enum(["件", "包", "袋", "箱", "克", "千克", "份"]).default("件");
+
 export const workbenchSchema = z.object({
   id: z.string().nullable(),
   name: z.string().trim().min(1, "商品名称不能为空"),
+  unitLabel: unitLabelSchema,
   unitCost: z.number({ message: "单件成本不能为空" }).min(0, "单件成本不能小于 0"),
   unitWeight: z
     .number({ message: "单件重量不能为空" })
@@ -59,6 +62,7 @@ export const shippingRuleSchema = z
 export const productSchema = z.object({
   id: z.string(),
   name: z.string().trim().min(1, "商品名称不能为空"),
+  unitLabel: unitLabelSchema,
   unitCost: z.number().min(0, "单件成本不能小于 0"),
   unitWeight: z.number().positive("单件重量必须大于 0"),
   selectedSpecIds: z.array(z.string()).min(1, "至少保留一个规格"),
@@ -88,6 +92,7 @@ export const historySchema = z.object({
   id: z.string(),
   productId: z.string().nullable(),
   productName: z.string(),
+  unitLabel: unitLabelSchema,
   unitCost: z.number(),
   unitWeight: z.number(),
   selectedSpecIds: z.array(z.string()),

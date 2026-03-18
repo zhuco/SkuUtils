@@ -46,7 +46,7 @@ export function RecentProducts({ products, specs, onLoad, onDelete }: Props) {
                 </Typography.Text>
                 <div>
                   {product.selectedSpecIds.map((specId) => (
-                    <Tag key={specId}>{labelMap.get(specId) ?? specId}</Tag>
+                    <Tag key={specId}>{`${labelMap.get(specId) ?? specId}${product.unitLabel}`}</Tag>
                   ))}
                 </div>
                 <Typography.Text type="secondary">

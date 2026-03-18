@@ -11,6 +11,7 @@ describe("calculateSession", () => {
   const form: WorkbenchForm = {
     id: null,
     name: "测试商品",
+    unitLabel: "件",
     unitCost: 8.7,
     unitWeight: 240,
     selectedSpecIds: [specs[0].id, specs[1].id]
@@ -25,7 +26,7 @@ describe("calculateSession", () => {
     });
 
     expect(result.items).toHaveLength(2);
-    expect(result.items[0].specName).toBe("X1");
+    expect(result.items[0].specName).toBe("X1件");
     expect(result.items[0].shippingFee).toBe(1.5);
     expect(result.items[0].finalSuggestedPrice).toBeGreaterThan(0);
   });

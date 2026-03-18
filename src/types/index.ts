@@ -1,4 +1,5 @@
 export type FeeMode = "fixed" | "percent";
+export type UnitLabel = "件" | "包" | "袋" | "箱" | "克" | "千克" | "份";
 
 export type SalesSpec = {
   id: string;
@@ -38,6 +39,7 @@ export type AppSettings = {
 export type Product = {
   id: string;
   name: string;
+  unitLabel: UnitLabel;
   unitCost: number;
   unitWeight: number;
   selectedSpecIds: string[];
@@ -69,6 +71,7 @@ export type CalculationHistory = {
   id: string;
   productId: string | null;
   productName: string;
+  unitLabel: UnitLabel;
   unitCost: number;
   unitWeight: number;
   selectedSpecIds: string[];
@@ -81,6 +84,7 @@ export type CalculationHistory = {
 export type WorkbenchForm = {
   id: string | null;
   name: string;
+  unitLabel: UnitLabel;
   unitCost: number | null;
   unitWeight: number | null;
   selectedSpecIds: string[];
@@ -88,6 +92,7 @@ export type WorkbenchForm = {
 
 export type CalculationSession = {
   productName: string;
+  unitLabel: UnitLabel;
   unitCost: number;
   unitWeight: number;
   selectedSpecIds: string[];
