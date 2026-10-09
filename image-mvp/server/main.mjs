@@ -1,0 +1,14 @@
+import {mkdirSync} from 'node:fs';
+import {resolve,dirname} from 'node:path';
+import {Store} from './store.mjs';
+import {createApp} from './app.mjs';
+import {generate} from './provider.mjs';
+const db=resolve(process.env.DB_PATH||'data/credits.sqlite');mkdirSync(dirname(db),{recursive:true,mode:0o700});
+const origin=process.env.APP_ORIGIN;if(!origin)throw Error('APP_ORIGIN required');
+const secure=process.env.NODE_ENV!=='development';if(secure&&!origin.startsWith('https://'))throw Error('HTTPS required');
+const endpoint=process.env.IMAGE_ENDPOINT;if(endpoint&&!endpoint.startsWith('https://'))throw Error('IMAGE_ENDPOINT must use HTTPS');
+const store=new Store(db);store.recover();
+const app=createApp(store,{origin,secure,dist:resolve('dist')});
+app.listen(Number(process.env.PORT||3000),'127.0.0.1',()=>console.log('Image MVP listening on loopback'));
+let busy=false;
+setInterval(async()=>{if(busy)return;busy=true;try{const job=store.claim();if(job){const result=await generate(JSON.parse(job.payload),{endpoint,apiKey:process.env.IMAGE_API_KEY,model:process.env.IMAGE_MODEL});store.finish(job.id,result.status,result.image||null,'system',result.note||'');}}catch{console.error('Worker error; inspect pending jobs');}finally{busy=false;}},1000);
