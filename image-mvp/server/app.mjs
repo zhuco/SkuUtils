@@ -1,0 +1,30 @@
+import express from 'express';
+import helmet from 'helmet';
+import { rateLimit } from 'express-rate-limit';
+import { z } from 'zod';
+import { hash,passwordHash,passwordMatches,fail } from './store.mjs';
+const authSchema=z.object({email:z.email().max(254).transform(s=>s.toLowerCase()),password:z.string().min(12).max(128)}).strict();
+export function createApp(store,{origin,secure=true,dist}) {
+ const app=express();app.disable('x-powered-by');app.use(helmet());
+ app.use('/api',(_,res,next)=>{res.set('Cache-Control','no-store');next();});
+ app.use('/api',rateLimit({windowMs:60000,limit:120}));
+ app.use('/api',(req,res,next)=>{if(!['GET','HEAD'].includes(req.method)&&req.get('origin')!==origin)return res.status(403).json({error:'请求来源不允许'});next();});
+ app.use(express.json({limit:'16kb'}));
+ const cookies=req=>{const raw=req.headers.cookie||'';return raw.split(';').map(s=>s.trim()).find(s=>s.startsWith('image_session='))?.slice(14)||'';};
+ const required=(req,res,next)=>{req.user=store.user(cookies(req));if(!req.user)return res.status(401).json({error:'请登录'});next();};
+ const loginLimit=rateLimit({windowMs:15*60000,limit:15});
+ const session=(res,id)=>res.cookie('image_session',store.session(id),{httpOnly:true,secure,sameSite:'strict',path:'/',maxAge:7*86400000});
+ app.post('/api/register',loginLimit,(req,res)=>{const data=authSchema.extend({invite:z.string().min(20).max(100)}).parse(req.body);const id=store.register(data.email,data.password,data.invite);session(res,id);res.status(201).json({id});});
+ const dummy=passwordHash('dummy-password-for-timing');
+ app.post('/api/login',loginLimit,(req,res)=>{const d=authSchema.parse(req.body);const user=store.get('SELECT * FROM users WHERE email=?',d.email);const valid=passwordMatches(d.password,user?.password||dummy);if(!user||!valid)fail(401,'邮箱或密码错误');session(res,user.id);res.json({id:user.id});});
+ app.post('/api/logout',required,(req,res)=>{store.run('DELETE FROM sessions WHERE token=?',hash(cookies(req)));res.clearCookie('image_session',{path:'/',secure,httpOnly:true,sameSite:'strict'}).json({ok:true});});
+ app.get('/api/me',required,(req,res)=>res.json(req.user));
+ app.get('/api/ledger',required,(req,res)=>res.json(store.all('SELECT delta,kind,reference,created FROM ledger WHERE user_id=? ORDER BY id DESC LIMIT 100',req.user.id)));
+ app.post('/api/generations',required,(req,res)=>{const key=z.string().uuid().parse(req.get('Idempotency-Key'));const d=z.object({prompt:z.string().trim().min(1).max(4000)}).strict().parse(req.body);res.status(202).json(store.reserve(req.user.id,key,JSON.stringify(d)));});
+ app.get('/api/generations',required,(req,res)=>res.json(store.all('SELECT id,status,created FROM jobs WHERE user_id=? ORDER BY created DESC LIMIT 50',req.user.id)));
+ app.get('/api/generations/:id',required,(req,res)=>{const job=store.get('SELECT id,status,created FROM jobs WHERE id=? AND user_id=?',req.params.id,req.user.id);if(!job)fail(404,'任务不存在');res.json(job);});
+ app.get('/api/generations/:id/image',required,(req,res)=>{const job=store.get("SELECT image FROM jobs WHERE id=? AND user_id=? AND status='succeeded'",req.params.id,req.user.id);if(!job)fail(404,'图片不存在');res.type('png').send(Buffer.from(job.image));});
+ if(dist)app.use(express.static(dist));
+ app.use((err,req,res,next)=>{if(res.headersSent)return next(err);res.status(err instanceof z.ZodError?400:err.status||500).json({error:err instanceof z.ZodError?'参数不合法':err.status?err.message:'服务器错误'});});
+ return app;
+}
